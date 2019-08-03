@@ -32,7 +32,3 @@ for sol = [sol_t0, sol_t1]
     idx = idx + 1;
 end
 fclose('all');
-% for sol = [sol_t0, sol_t1]
-%     str = char(sol);
-%     str = regexprep(str, 'x
-% end
