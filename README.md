@@ -9,3 +9,11 @@ by Huang Yuyao, Wen YongKun
 ## Installation
 
 `pip install git+https://github.com/huangyuyao/bevutils.git@master`
+
+## Development
+
+```
+git clone https://github.com/huangyuyao/bevutils.git
+cd bevutils
+pip install -e .
+```
