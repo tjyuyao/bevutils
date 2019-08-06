@@ -9,11 +9,19 @@ setup(
     description='Bird\'s-Eye View Utilities',
     packages=find_packages(),
     install_requires=[
-        'numpy >= 1.11.1',
-        'matplotlib >= 1.5.1',
-        'opencv-python',
-        'easydict'
+        'numpy >= 1.17.0',
+        'matplotlib >= 3.1.1',
+        'opencv-python >= 4.1.0.25',
+        'easydict >= 1.9',
+        'torch >= 1.1.0',
+        'torchvision >= 0.3.0',
+        'logger >= 1.4',
     ],
+    entry_points={
+        'console_scripts' : [
+            'bevtrain = bevutils.trainer.train:main',
+        ],
+    }
 )
 
 
