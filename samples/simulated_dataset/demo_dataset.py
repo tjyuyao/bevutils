@@ -9,7 +9,7 @@ loader = DataLoader(dataset, batch_size=1)
 plt.figure(figsize=(20,10))
 
 for batch_ndx, sample in enumerate(loader):
-    rx, ry, rz, bv, pv = sample
+    pv, (bv, rx, ry, rz) = sample
     plt.subplot(2, 5, batch_ndx+1)
     plt.imshow(bv[0], cmap='gray')
     plt.subplot(2, 5, 5+batch_ndx+1)

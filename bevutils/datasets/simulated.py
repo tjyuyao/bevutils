@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import inv
 import torch
 import torch.utils.data
-from ..functional import make_rot_mat, make_homography
+from ..functional import epipolar as E
 
 class SimulatedDataSet(torch.utils.data.Dataset):
     def __init__(self, 
@@ -17,6 +17,7 @@ class SimulatedDataSet(torch.utils.data.Dataset):
                  rx=lambda : random.uniform(1.4, 1.8),
                  ry=lambda : random.uniform(-0.04, 0.04),
                  rz=lambda : 0.0,
+                 rot_order='xyz',
                  tz=-10,
                  line_width=lambda : random.randint(10, 20),
                  line_counts=lambda : random.randint(1, 2),
@@ -24,36 +25,43 @@ class SimulatedDataSet(torch.utils.data.Dataset):
                  bg=lambda : 0,
                  fg=lambda : 255,
                  length=100,
-                 device=None,
-                 dtype=torch.float32
+                 to_tensor=False,
+                 device=torch.cuda,
+                 dtype=torch.float64
         ):
-        self.K = torch.tensor(intrinsics, dtype=dtype, device=device)
+        self.K = np.array(intrinsics, dtype='float')
         self.bvsize = bvsize # (H, W)
         self.pvsize = (pvsize[1], pvsize[0]) # (W, H)
         self.length = length
         self.rx, self.ry, self.rz = rx, ry, rz
-        self.tz = torch.tensor([tz], dtype=dtype, device=device)
+        self.rot_order = rot_order
+        self.tz = tz
         self.line_width = line_width
         self.line_counts = line_counts
         self.circ_counts = circ_counts
         self.bg, self.fg = bg, fg
-        self.device=device
-        self.dtype=dtype
-        self.bv_pivot = torch.tensor([bvsize[1]/2, bvsize[0], 1], dtype=self.dtype, device=self.device).view(3, 1)
-        self.pv_pivot = torch.tensor([self.K[1,2], self.K[0,2]*2, 1], dtype=dtype, device=device).view(3, 1)
+        self.bv_pivot = [bvsize[1]/2, bvsize[0], 1]
+        self.pv_pivot = [self.K[1,2], self.K[0,2]*2, 1]
+        self.to_tensor = to_tensor
+        self.device = device
+        self.dtype = dtype
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
+        if idx > self.length:
+            raise IndexError
         bv = np.full(shape=self.bvsize, fill_value=self.bg(), dtype=np.uint8)
         self.__draw_random_lines_on(bv, self.line_counts())
         self.__draw_random_circles_on(bv, self.circ_counts())
         rx, ry, rz = self.rx(), self.ry(), self.rz()
-        R = make_rot_mat(rx, ry, rz, rot_order='xyz', dtype=self.dtype, device=self.device)
-        H = make_homography(R, self.tz, self.K, bv_pivot=self.bv_pivot, pv_pivot=self.pv_pivot).squeeze().detach().cpu().numpy()
+        R = E.numpy.make_rotation_matrix(rx, ry, rz, self.rot_order)
+        H = E.numpy.make_constrained_homography(R, self.tz, self.K, bv_pivot=self.bv_pivot, pv_pivot=self.pv_pivot)
         pv = cv2.warpPerspective(bv, inv(H), self.pvsize)
-        return rx, ry, rz, bv, pv
+        if self.to_tensor:
+            [bv, pv, rx, ry, rz] = [torch.tensor(i, device=self.device, dtype=self.dtype) for i in [bv, pv, rx, ry, rz]]
+        return pv, (bv, rx, ry, rz)
 
     def __draw_random_lines_on(self, bv, num=1):
         H, W = self.bvsize
