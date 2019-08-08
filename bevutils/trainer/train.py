@@ -6,10 +6,7 @@ import torch
 
 from torchvision.utils import make_grid
 
-from ..datasets import data_loaders as module_data
-from ..models import loss as module_loss
-from ..models import metric as module_metric
-from ..models import model as module_arch
+from ..models import LOSSES, MODELS, METRICS, DATA_LOADERS
 from .base_trainer import BaseTrainer
 from .parse_config import ConfigParser
 from .utils import inf_loop
@@ -71,12 +68,12 @@ class Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = self.loss(output, target)
+            loss = self.loss(output, target) #FIXME multiple losses
             loss.backward()
             self.optimizer.step()
 
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
-            self.writer.add_scalar('loss', loss.item())
+            self.writer.add_scalar('loss', loss.item()) # FIXME: write multiple losses
             total_loss += loss.item()
             total_metrics += self._eval_metrics(output, target)
 
@@ -170,16 +167,16 @@ def main():
     logger = config.get_logger('train')
 
     # setup data_loader instances
-    data_loader = config.initialize('data_loader', module_data)
+    data_loader = config.initialize('data_loader', DATA_LOADERS)
     valid_data_loader = data_loader.split_validation()
 
     # build model architecture, then print to console
-    model = config.initialize('arch', module_arch)
+    model = config.initialize('model', MODELS)
     logger.info(model)
 
     # get function handles of loss and metrics
-    loss = getattr(module_loss, config['loss'])
-    metrics = [getattr(module_metric, met) for met in config['metrics']]
+    losses = config.initialize('losses', LOSSES)
+    metrics = config.initialize('metrics', METRICS)
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -187,7 +184,7 @@ def main():
 
     lr_scheduler = config.initialize('lr_scheduler', torch.optim.lr_scheduler, optimizer)
 
-    trainer = Trainer(model, loss, metrics, optimizer,
+    trainer = Trainer(model, losses, metrics, optimizer,
                       config=config,
                       data_loader=data_loader,
                       valid_data_loader=valid_data_loader,

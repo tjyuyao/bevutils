@@ -1,8 +1,10 @@
 from torchvision import datasets, transforms
-from . import SimulatedDataSet
+from ...datasets import SimulatedDataSet
+from ..registry import DATA_LOADERS
 from . import BaseDataLoader
 
 
+@DATA_LOADERS.register
 class MnistDataLoader(BaseDataLoader):
     """
     MNIST data loading demo using BaseDataLoader
@@ -18,9 +20,9 @@ class MnistDataLoader(BaseDataLoader):
 
 
 class SimulatedOverfitDataLoader(BaseDataLoader):
-    """
-    MNIST data loading demo using BaseDataLoader
-    """
     def __init__(self, length, batch_size, shuffle=True, validation_split=0.0, num_workers=1):
-        self.dataset = list(SimulatedDataSet(length=length))
+        trsfm = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        self.dataset = list(SimulatedDataSet(length=length, transform=trsfm))
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)

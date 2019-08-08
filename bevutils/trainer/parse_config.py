@@ -1,9 +1,11 @@
-import os
+import inspect
 import logging
-from pathlib import Path
+import os
+from datetime import datetime
 from functools import reduce
 from operator import getitem
-from datetime import datetime
+from pathlib import Path
+
 from .logger import setup_logging
 from .utils import read_json, write_json
 
@@ -57,11 +59,18 @@ class ConfigParser:
         finds a function handle with the name given as 'type' in config, and returns the 
         instance initialized with corresponding keyword args given as 'args'.
         """
-        module_name = self[name]['type']
-        module_args = dict(self[name]['args'])
-        assert all([k not in module_args for k in kwargs]), 'Overwriting kwargs given in config file is not allowed'
-        module_args.update(kwargs)
-        return getattr(module, module_name)(*args, **module_args)
+        if isinstance(self[name], dict):
+            module_name = self[name]['type']
+            module_args = dict(self[name]['args'])
+            assert all([k not in module_args for k in kwargs]), 'Overwriting kwargs given in config file is not allowed'
+            module_args.update(kwargs)
+            return getattr(module, module_name)(*args, **module_args)
+        elif isinstance(self[name], str):
+            return getattr(module, self[name])
+        elif isinstance(self[name], list) and isinstance(self[name][0], str):
+            return [getattr(module, func_name) for func_name in self[name]] 
+        else:
+            raise NotImplementedError("unsupported config style")
 
     def __getitem__(self, name):
         return self.config[name]
