@@ -24,10 +24,11 @@ warpPerspective = PerspectiveTransformerLayer((600, 200), (H, W), intrinsics, tr
 rx = torch.tensor([1.72, 0.00], requires_grad=True)
 rz = torch.tensor([-0.04, 0.00], requires_grad=True)
 ry = torch.tensor([0.00, 0.00], requires_grad=False)
-
 bev = warpPerspective(inps, rx, ry, rz).permute(0, 2, 3, 1)
 print("requires_grad =", bev.requires_grad)
 assert bev.requires_grad == rx.requires_grad | ry.requires_grad | rz.requires_grad
+dummy_loss = torch.sum(bev)
+dummy_loss.backward()
 
 bev = bev.detach().cpu().numpy().astype(np.uint8)
 

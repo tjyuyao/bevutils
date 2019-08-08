@@ -57,7 +57,7 @@ class PerspectiveTransformerLayer(nn.Module):
         # get coordinates on perspective view for each grid: `pv_coord` with shape (B, Hb, Wb, 2, 1)
         bv_grid = self.bv_grid.expand(B, Hb, Wb, 3, 1)
         pv_coord = torch.matmul(H[:, None, None, :, :], bv_grid)
-        pv_coord[:, :, :, 0:2, :] /= pv_coord[:, :, :, 2:3, :]
+        pv_coord = pv_coord[:, :, :, 0:2, :] / pv_coord[:, :, :, 2:3, :]
         # gather pixels acoording to `pv_coord`
         x = pv_coord[:,None,:,:,0,0] # with shape (B, 1, Hb, Wb)
         y = pv_coord[:,None,:,:,1,0]
