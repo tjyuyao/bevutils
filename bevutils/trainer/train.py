@@ -9,7 +9,7 @@ from torchvision.utils import make_grid
 from ..models import LOSSES, MODELS, METRICS, DATA_LOADERS
 from .base_trainer import BaseTrainer
 from .parse_config import ConfigParser
-from .utils import inf_loop
+from .utils import inf_loop, import_plugin
 
 
 class Trainer(BaseTrainer):
@@ -64,7 +64,7 @@ class Trainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.to(self.device), target.to(self.device)
+            data, target = self._to_device(data), self._to_device(target)
 
             self.optimizer.zero_grad()
             output = self.model(data)
@@ -100,6 +100,15 @@ class Trainer(BaseTrainer):
             self.lr_scheduler.step()
 
         return log
+
+    def _to_device(self, data):
+        if isinstance(data, torch.Tensor):
+            return data.to(self.device)
+        elif isinstance(data, list) or isinstance(data, tuple):
+            return [self._to_device(d) for d in data]
+        else:
+            raise ValueError("unsupported data type, excect torch.Tensor, got {}".format(
+                type(data)))
 
     def _valid_epoch(self, epoch):
         """
@@ -165,6 +174,10 @@ def main():
     ]
     config = ConfigParser(args, options)
     logger = config.get_logger('train')
+
+    # import plugins
+    for file_path in config['plugins']:
+        import_plugin(file_path)
 
     # setup data_loader instances
     data_loader = config.initialize('data_loader', DATA_LOADERS)

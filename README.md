@@ -5,7 +5,7 @@ by Huang Yuyao, Wen YongKun
 
 1. A differentiable Perspective Transformer Layer inspired by Spatial Transformer Networks. See `bevutils/layers/perspective_transformer.py` and `samples/basic/sample.py`.
 2. A simulated dataset. See `bevutils/datasets/simulated.py` and `samples/simulated_dataset/demo_dataset.py`.
-3. A traning system inspired by [victoresque's ](https://github.com/victoresque/pytorch-template) and [mmdetection](https://github.com/open-mmlab/mmdetection/)
+3. A training system inspired by [victoresque's template](https://github.com/victoresque/pytorch-template) and [mmdetection](https://github.com/open-mmlab/mmdetection/)
 
 ## Installation
 

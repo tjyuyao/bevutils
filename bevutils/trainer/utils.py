@@ -1,8 +1,10 @@
+import importlib
 import json
-from pathlib import Path
+import os
+from collections import OrderedDict
 from datetime import datetime
 from itertools import repeat
-from collections import OrderedDict
+from pathlib import Path
 
 
 def ensure_dir(dirname):
@@ -35,3 +37,21 @@ class Timer:
 
     def reset(self):
         self.cache = datetime.now()
+
+def parse_device(n_gpu_use):
+    """
+    setup GPU device if available, move model into configured device
+    """
+    n_gpu = torch.cuda.device_count()
+    if n_gpu_use > n_gpu:
+        n_gpu_use = n_gpu
+    device = torch.device('cuda:0' if n_gpu_use > 0 else 'cpu')
+    list_ids = list(range(n_gpu_use))
+    return device, list_ids
+
+def import_plugin(file_path):
+    assert file_path.endswith('.py') and os.path.isfile(file_path)
+    module_name = os.path.basename(file_path)[:-3]
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)

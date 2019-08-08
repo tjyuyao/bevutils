@@ -1,2 +1,5 @@
 from .registry import LOSSES, METRICS, MODELS, DATA_LOADERS
-from . import losses, metrics, models, data_loaders
+from .losses import *
+from .metrics import *
+from .models import *
+from .data_loaders import *

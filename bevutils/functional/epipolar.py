@@ -36,11 +36,11 @@ class torch:
     @staticmethod
     def make_rotation_matrix(rx=0.0, ry=0.0, rz=0.0, rot_order='xyz', dtype=None, device=None):
         if not isinstance(rx, _torch.Tensor):
-            rx = torch.tensor([rx], dtype=dtype, device=device)
+            rx = _torch.tensor([rx], dtype=dtype, device=device)
         if not isinstance(ry, _torch.Tensor):
-            ry = torch.tensor([ry], dtype=dtype, device=device)
+            ry = _torch.tensor([ry], dtype=dtype, device=device)
         if not isinstance(rz, _torch.Tensor):
-            rz = torch.tensor([rz], dtype=dtype, device=device)
+            rz = _torch.tensor([rz], dtype=dtype, device=device)
         cx, cy, cz = _torch.cos(rx), _torch.cos(ry), _torch.cos(rz)
         sx, sy, sz = _torch.sin(rx), _torch.sin(ry), _torch.sin(rz)
         B = rx.shape[0]

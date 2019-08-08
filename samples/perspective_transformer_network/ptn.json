@@ -1,0 +1,69 @@
+{
+    "name": "PTL_overfit",
+    "n_gpu": 1,
+
+    "plugins":[
+        "ptn.py"
+    ],
+
+    "model": {
+        "type": "PerspectiveTransformerNetwork",
+        "args": {
+            "bv_size": [800, 300],
+            "pv_size": [960, 1280],
+            "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
+            "translate_z": -30.0,
+            "rotation_order": "x"
+        }
+    },
+    "data_loader": {
+        "type": "SimulatedOverfitDataLoader",
+        "args":{
+            "bv_size": [800, 300],
+            "pv_size": [960, 1280],
+            "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
+            "translate_z": -30.0,
+            "rotation_order": "x",
+            "length": 1,
+            "batch_size": 1,
+            "shuffle": true,
+            "validation_split": 0.0,
+            "num_workers": 1
+        }
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 0.001,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
+    "losses": {
+        "type": "PerspectiveLoss",
+        "args":{
+            "w" : 0.5
+        }
+    },
+    "metrics": [
+    ],
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "epochs": 100,
+
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+        
+        "monitor": "min val_loss",
+        "early_stop": 10,
+
+        "tensorboard": true
+    }
+}

@@ -50,7 +50,6 @@ class PerspectiveTransformerLayer(nn.Module):
         - Bilinear Interpolation: refers to https://medium.com/@shanlins/spatial-transformer-networks-stn-and-its-implementation-2638d58d41f8
         '''
         B, C, Hp, Wp, Hb, Wb = *pv.shape, *self.bv_size
-        assert B == rx.shape[0]
         # get constrained homography
         R = E.torch.make_rotation_matrix(rx, ry, rz, self.rot_order, device=self.dev, dtype=self.dtype)
         H = E.torch.make_constrained_homography(R, self.tz, self.intrinsics, self.inv_intrinsics, self.bv_pivot, self.pv_pivot)

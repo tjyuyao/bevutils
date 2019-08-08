@@ -67,8 +67,8 @@ class ConfigParser:
             return getattr(module, module_name)(*args, **module_args)
         elif isinstance(self[name], str):
             return getattr(module, self[name])
-        elif isinstance(self[name], list) and isinstance(self[name][0], str):
-            return [getattr(module, func_name) for func_name in self[name]] 
+        elif isinstance(self[name], list):
+            return [getattr(module, func_name) for func_name in self[name] if isinstance(func_name, str)] 
         else:
             raise NotImplementedError("unsupported config style")
 
