@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='bevutils',
-    version='1.0.2',
+    version='1.1.0',
     url='https://github.com/huangyuyao/bevutils.git',
     author='Huang Yuyao, Wen Yongkun',
     author_email='huangyuyao@outlook.com',
