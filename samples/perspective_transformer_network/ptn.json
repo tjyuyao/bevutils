@@ -9,7 +9,7 @@
     "model": {
         "type": "PerspectiveTransformerNetwork",
         "args": {
-            "bv_size": [800, 300],
+            "bv_size": [1024, 256],
             "pv_size": [960, 1280],
             "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
             "translate_z": -30.0,
@@ -17,14 +17,14 @@
         }
     },
     "data_loader": {
-        "type": "SimulatedOverfitDataLoader",
+        "type": "SimulatedDataLoader",
         "args":{
-            "bv_size": [800, 300],
+            "bv_size": [1024, 256],
             "pv_size": [960, 1280],
             "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
             "translate_z": -30.0,
             "rotation_order": "x",
-            "length": 1,
+            "length": 100,
             "batch_size": 1,
             "shuffle": true,
             "validation_split": 0.0,
@@ -42,7 +42,7 @@
     "losses": {
         "type": "PerspectiveLoss",
         "args":{
-            "w" : 0.5
+            "w_bv" : 0.0
         }
     },
     "metrics": [

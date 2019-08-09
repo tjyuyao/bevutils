@@ -68,12 +68,20 @@ class Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = self.loss(output, target) #FIXME multiple losses
-            loss.backward()
+            loss = self.loss(output, target)
+            if isinstance(loss, torch.Tensor):
+                loss.backward()
+                self.writer.add_scalar('loss', loss.item())
+            elif isinstance(loss, dict):
+                loss['loss'].backward()
+                for k, v in loss.items():
+                    self.writer.add_scalar(k, v.item())
+                loss = loss['loss']
+            else:
+                raise TypeError("unsupported loss type {}".format(type(loss)))
             self.optimizer.step()
 
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
-            self.writer.add_scalar('loss', loss.item()) # FIXME: write multiple losses
             total_loss += loss.item()
             total_metrics += self._eval_metrics(output, target)
 
@@ -82,7 +90,10 @@ class Trainer(BaseTrainer):
                     epoch,
                     self._progress(batch_idx),
                     loss.item()))
-                self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                if isinstance(data, list):
+                    data = data[0]
+                if isinstance(data, torch.Tensor):
+                    self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
 
             if batch_idx == self.len_epoch:
                 break

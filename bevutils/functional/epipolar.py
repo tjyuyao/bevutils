@@ -6,7 +6,7 @@ from numpy.linalg import inv
 class numpy:
 
     @staticmethod
-    def make_rotation_matrix(rx=0.0, ry=0.0, rz=0.0, rot_order='xyz', dtype=_numpy.float64):
+    def make_rotation_matrix(rx=0.0, ry=0.0, rz=0.0, rot_order='xyz', dtype=_numpy.float32):
         cx, cy, cz = math.cos(rx), math.cos(ry), math.cos(rz)
         sx, sy, sz = math.sin(rx), math.sin(ry), math.sin(rz)
         _Rx = _numpy.array([[1.0, 0.0, 0.0], [0.0, cx, -sx], [0.0, sx, cx]], dtype=dtype)

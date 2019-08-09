@@ -10,48 +10,63 @@ from bevutils.trainer.utils import parse_device
 
 @MODELS.register
 class PerspectiveTransformerNetwork(BaseModel):
-    def __init__(self, bv_size, pv_size, intrinsics, translate_z = 0.0, rotation_order='xyz'):
+    def __init__(self, bv_size, pv_size, intrinsics, translate_z = -10.0, rotation_order='xyz'):
         super().__init__()
-        self.fc_len = pv_size[0] * pv_size[1] // 4 // 4 * 10
         self.rotation_order = rotation_order
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5, padding=2)
-        self.conv2 = nn.Conv2d(10, 10, kernel_size=5, padding=2)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(self.fc_len, 50)
-        self.fc2 = nn.Linear(50, len(self.rotation_order))
-        self.ptl = PerspectiveTransformerLayer(bv_size, pv_size, intrinsics, translate_z, rotation_order)
+        # layers
+        self.ptl0 = PerspectiveTransformerLayer(bv_size, pv_size, intrinsics, translate_z, rotation_order)
+        self.encoder = nn.Sequential(
+            nn.Conv2d(  1,  32, 5, stride=1, padding=2), nn.SELU(True),
+            nn.Conv2d( 32,  64, 3, stride=1, padding=1), nn.SELU(True),
+            nn.Conv2d( 64, 128, 3, stride=2, padding=1), nn.SELU(True),
+            nn.Conv2d(128, 128, 3, stride=2, padding=1), nn.SELU(True),
+            nn.Conv2d(128, 128, 3, stride=2, padding=1), nn.SELU(True),
+        )
+        self.fc1 = nn.Sequential(
+            nn.Linear(128*bv_size[0]//8, 1024), nn.SELU(True),
+            nn.Linear(1024, 128), nn.SELU(True),
+            nn.Linear(128, len(rotation_order)), nn.Tanh()
+        )
+        self.ptl1 = PerspectiveTransformerLayer(bv_size, pv_size, intrinsics, translate_z, rotation_order)
 
-    def forward(self, x):
-        raw = x
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, self.fc_len)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        angles = self.fc2(x)
-        angles = {'r'+self.rotation_order[i] : angles[:, i] for i in range(angles.shape[1])}
-        x = self.ptl(raw, **angles)
+    def forward(self, input):
+        pv, rx0, ry0, rz0 = input
+        angles_base = {'rx':rx0, 'ry':ry0, 'rz':rz0}
+        bv0 = self.ptl0(pv, rx0, ry0, rz0)
+        feat = self.encoder(bv0)
+        rowfeat = torch.sum(F.softmax(feat, dim=-1) * feat, dim=-1)
+        rowfeat = rowfeat.view((rowfeat.shape[0], -1))
+        angles_delta = self.fc1(rowfeat)
+        angles = {}
+        for i, x_str in enumerate(self.rotation_order):
+            rx_str = 'r' + x_str
+            angles[rx_str] = angles_base[rx_str] + angles_delta[i]
+        x = self.ptl1(pv, **angles)
         return x, angles
 
+
 @DATA_LOADERS.register
-class SimulatedOverfitDataLoader(BaseDataLoader):
+class SimulatedDataLoader(BaseDataLoader): # FIXME narrow random range
     def __init__(self, bv_size, pv_size, intrinsics, translate_z, rotation_order,
         length, batch_size, shuffle=True, validation_split=0.0, num_workers=1):
-        self.dataset = list(SimulatedDataSet(
+        self.dataset = SimulatedDataSet(
             length=length, bv_size=bv_size, pv_size=pv_size, intrinsics=intrinsics,
-            translate_z = translate_z, rotation_order=rotation_order, to_tensor=True))
+            translate_z = translate_z, rotation_order=rotation_order, to_tensor=True)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+
 
 @LOSSES.register
 class PerspectiveLoss():
-    def __init__(self, w):
-        self.w = w
+    def __init__(self, w_bv):
+        self.w_bv = w_bv
     def __call__(self, output, target):
         bv_gt, rx, ry, rz = target
         angle_gt = {'rx' : rx, 'ry': ry, 'rz':rz}
         bv, angle = output
-        loss_bv = torch.mean((bv-bv_gt)**2)
-        loss_ang = torch.zeros(1, device=rx.device)
+        loss = dict()
+        loss['loss_bv'] = torch.mean((bv-bv_gt)**2) * self.w_bv
+        loss['loss_ang'] = torch.zeros(1, device=rx.device)
         for k in angle:
-            loss_ang += (angle[k] - angle_gt[k])**2
-        return loss_ang + loss_bv * self.w
+            loss['loss_ang'] += (angle[k] - angle_gt[k])**2
+        loss['loss'] = loss['loss_bv'] + loss['loss_ang']
+        return loss

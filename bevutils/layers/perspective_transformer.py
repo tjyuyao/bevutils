@@ -7,7 +7,7 @@ from ..functional import epipolar as E
 
 class PerspectiveTransformerLayer(nn.Module):
 
-    def __init__(self, bv_size, pv_size, intrinsics, translate_z = 0.0, rotation_order='xyz', device='cuda:0', dtype=torch.float32):
+    def __init__(self, bv_size, pv_size, intrinsics, translate_z = -10.0, rotation_order='xyz', device='cuda:0', dtype=torch.float32):
         '''
         `translate_z` is a hyperparameter to be chose in range (-Inf, 1.0), the perspective view will be roughly scaled (1-translate_z) times.
         '''
