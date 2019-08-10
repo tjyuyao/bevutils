@@ -1,5 +1,5 @@
 {
-    "name": "PTL_overfit",
+    "name": "PTL_FC",
     "n_gpu": 1,
 
     "plugins":[
@@ -7,7 +7,7 @@
     ],
 
     "model": {
-        "type": "PerspectiveTransformerNetwork",
+        "type": "PerspectiveTransformerNetwork_DensePred",
         "args": {
             "bv_size": [1024, 256],
             "pv_size": [960, 1280],
@@ -24,17 +24,19 @@
             "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
             "translate_z": -30.0,
             "rotation_order": "x",
+            "min_rx": 1.65,
+            "max_rx": 1.77,
             "length": 10000,
-            "batch_size": 5,
+            "batch_size": 25,
             "shuffle": true,
             "validation_split": 0.0,
-            "num_workers": 5
+            "num_workers": 13
         }
     },
     "optimizer": {
         "type": "SGD",
         "args":{
-            "lr": 0.0001
+            "lr": 0.000001
         }
     },
     "losses": {
@@ -44,6 +46,7 @@
         }
     },
     "metrics": [
+      "rmse_rx"
     ],
     "lr_scheduler": {
         "type": "StepLR",

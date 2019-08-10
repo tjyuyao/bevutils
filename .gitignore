@@ -125,3 +125,7 @@ dmypy.json
 
 # custom
 .vscode
+*.png
+*.jpg
+TODO
+saved
