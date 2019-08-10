@@ -93,6 +93,59 @@ class PerspectiveTransformerNetwork_DensePred(BaseModel):
         return x, angles
 
 
+@MODELS.register
+class PerspectiveTransformerNetwork_Std(BaseModel):
+    def __init__(self, bv_size, pv_size, intrinsics, translate_z = -10.0, rotation_order='xyz', rx_span=0.12):
+        super().__init__()
+        self.rotation_order = rotation_order
+        self.angle_delta_scale = rx_span
+        # layers
+        self.ptl0 = PerspectiveTransformerLayer(bv_size, pv_size, intrinsics, translate_z, rotation_order)
+        self.encoder = nn.Sequential(
+            nn.Conv2d(  1,  32, 5, stride=1, padding=2), nn.BatchNorm2d( 32), nn.SELU(True),
+            nn.Conv2d( 32,  64, 3, stride=1, padding=1), nn.BatchNorm2d( 64), nn.SELU(True),
+            nn.Conv2d( 64, 128, 3, stride=2, padding=1), nn.BatchNorm2d(128), nn.SELU(True),
+        )
+        self.score_head = nn.Sequential(
+            nn.Conv2d(128, 128, 3, stride=2, padding=1), nn.BatchNorm2d(128), nn.SELU(True),
+            nn.Conv2d(128, 1, 3, stride=2, padding=1), 
+        )
+        self.angle_fc = nn.Sequential(
+            nn.Linear(1, 1), nn.Tanh()
+        )
+        self.attention_head = nn.Sequential(
+            nn.Conv2d(128, 128, 3, stride=2, padding=1),nn.BatchNorm2d(128), nn.SELU(True),
+            nn.Conv2d(128, 1, 3, stride=2, padding=1), nn.SELU(True)
+        )
+        self.ptl1 = PerspectiveTransformerLayer(bv_size, pv_size, intrinsics, translate_z, rotation_order)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            # elif isinstance(m, nn.BatchNorm2d):
+            #     nn.init.constant_(m.weight, 1)
+            #     nn.init.constant_(m.bias, 0)
+
+
+    def forward(self, input):
+        pv, rx0, ry0, rz0 = input
+        angles_base = {'rx':rx0, 'ry':ry0, 'rz':rz0}
+        bv0 = self.ptl0(pv, rx0, ry0, rz0)
+        feat = self.encoder(bv0)
+        score = self.score_head(feat)
+        attention = self.attention_head(feat)
+        B, C, H, W = attention.shape
+        score = score.view((B, C, H*W))
+        attention = F.softmax(attention.view((B, C, H*W)), dim=-1)
+        score_mean = torch.mean(score * attention, dim=-1, keepdim=True)
+        score_var = torch.mean((score - score_mean)**2 * attention, dim=-1)
+        score_std = torch.sqrt(score_var)
+        angles_delta = self.angle_fc(score_std) * self.angle_delta_scale
+        angles = {}
+        for i, x_str in enumerate(self.rotation_order):
+            rx_str = 'r' + x_str
+            angles[rx_str] = angles_base[rx_str] + angles_delta[:, i]
+        x = self.ptl1(pv, **angles)
+        return x, angles
 
 @DATA_LOADERS.register
 class SimulatedDataLoader(BaseDataLoader): # FIXME narrow random range

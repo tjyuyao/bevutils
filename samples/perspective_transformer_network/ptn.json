@@ -1,19 +1,20 @@
 {
     "name": "PTL_FC",
-    "n_gpu": 1,
+    "n_gpu": 3,
 
     "plugins":[
         "ptn.py"
     ],
 
     "model": {
-        "type": "PerspectiveTransformerNetwork_DensePred",
+        "type": "PerspectiveTransformerNetwork_Std",
         "args": {
             "bv_size": [1024, 256],
             "pv_size": [960, 1280],
             "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
             "translate_z": -30.0,
-            "rotation_order": "x"
+            "rotation_order": "x",
+            "rx_span": 0.12
         }
     },
     "data_loader": {
@@ -27,7 +28,7 @@
             "min_rx": 1.65,
             "max_rx": 1.77,
             "length": 10000,
-            "batch_size": 25,
+            "batch_size": 51,
             "shuffle": true,
             "validation_split": 0.0,
             "num_workers": 13

@@ -16,12 +16,14 @@ class PerspectiveTransformerLayer(nn.Module):
         self.dev = torch.device(device) if device else None
         self.rot_order = rotation_order
         self.bv_size, self.pv_size = bv_size, pv_size
-        self.intrinsics = self._prepare_intrinsics(intrinsics)
-        self.inv_intrinsics = torch.inverse(self.intrinsics)
-        self.bv_pivot, self.pv_pivot = self._prepare_pivots(bv_size, pv_size, self.inv_intrinsics)
-        self.n = torch.tensor([[0], [0], [1]], device=self.dev, dtype=self.dtype)
-        self.tz = torch.tensor([translate_z], device=self.dev, dtype=self.dtype)
-        self.bv_grid = self._prepare_coord_grid(*bv_size)
+        self.register_buffer('intrinsics', self._prepare_intrinsics(intrinsics))
+        self.register_buffer('inv_intrinsics', torch.inverse(self.intrinsics))
+        self.register_buffer('n', torch.tensor([[0], [0], [1]], device=self.dev, dtype=self.dtype))
+        self.register_buffer('tz', torch.tensor([translate_z], device=self.dev, dtype=self.dtype))
+        self.register_buffer('bv_grid', self._prepare_coord_grid(*bv_size))
+        bv_pivot, pv_pivot = self._prepare_pivots(bv_size, pv_size, self.inv_intrinsics)
+        self.register_buffer('bv_pivot', bv_pivot)
+        self.register_buffer('pv_pivot', pv_pivot)
 
     def _prepare_intrinsics(self, intrinsics):
         if isinstance(intrinsics, list) or isinstance(intrinsics, np.array):
@@ -51,7 +53,7 @@ class PerspectiveTransformerLayer(nn.Module):
         '''
         B, C, Hp, Wp, Hb, Wb = *pv.shape, *self.bv_size
         # get constrained homography
-        R = E.torch.make_rotation_matrix(rx, ry, rz, self.rot_order, device=self.dev, dtype=self.dtype)
+        R = E.torch.make_rotation_matrix(rx, ry, rz, self.rot_order, device=pv.device, dtype=self.dtype)
         H = E.torch.make_constrained_homography(R, self.tz, self.intrinsics, self.inv_intrinsics, self.bv_pivot, self.pv_pivot)
         # get coordinates on perspective view for each grid: `pv_coord` with shape (B, Hb, Wb, 2, 1)
         bv_grid = self.bv_grid.expand(B, Hb, Wb, 3, 1)
