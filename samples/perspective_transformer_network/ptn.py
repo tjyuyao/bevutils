@@ -67,6 +67,6 @@ class PerspectiveLoss():
         loss['loss_bv'] = torch.mean((bv-bv_gt)**2) * self.w_bv
         loss['loss_ang'] = torch.zeros(1, device=rx.device)
         for k in angle:
-            loss['loss_ang'] += (angle[k] - angle_gt[k])**2
-        loss['loss'] = loss['loss_bv'] + loss['loss_ang']
+            loss['loss_ang'] += torch.mean((angle[k] - angle_gt[k])**2)
+        loss['loss'] = torch.mean(loss['loss_bv'] + loss['loss_ang'])
         return loss

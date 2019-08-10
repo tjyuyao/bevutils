@@ -24,19 +24,17 @@
             "intrinsics": [[1150, 0, 480], [0, 1150, 640], [0, 0, 1.0]],
             "translate_z": -30.0,
             "rotation_order": "x",
-            "length": 100,
-            "batch_size": 1,
+            "length": 10000,
+            "batch_size": 5,
             "shuffle": true,
             "validation_split": 0.0,
-            "num_workers": 1
+            "num_workers": 5
         }
     },
     "optimizer": {
-        "type": "Adam",
+        "type": "SGD",
         "args":{
-            "lr": 0.001,
-            "weight_decay": 0,
-            "amsgrad": true
+            "lr": 0.0001
         }
     },
     "losses": {

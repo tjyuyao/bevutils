@@ -48,22 +48,26 @@ class SimulatedDataSet(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        if idx > self.length:
+        if idx >= self.length:
             raise IndexError
         bv = np.full(shape=self.bv_size, fill_value=self.bg(), dtype=np.uint8)
         self.__draw_random_lines_on(bv, self.line_counts())
         self.__draw_random_circles_on(bv, self.circ_counts())
         rx0, ry0, rz0 = self.rx(), self.ry(), self.rz()
         rx, ry, rz = self.rx(), self.ry(), self.rz()
-        R = E.numpy.make_rotation_matrix(rx, ry, rz, self.rot_order)
-        H = E.numpy.make_constrained_homography(R, self.tz, self.K, bv_pivot=self.bv_pivot, pv_pivot=self.pv_pivot)
+        H = self.make_constrained_homography(rx, ry, rz)
         pv = cv2.warpPerspective(bv, inv(H), self.pv_size)
         if self.to_tensor:
             [bv, rx0, ry0, rz0, pv, rx, ry, rz] = [
                 torch.tensor(i, dtype=self.dtype) 
-                    for i in [bv[np.newaxis, :, :], rx0, ry0, rz0,
-                              pv[np.newaxis, :, :],  rx,  ry,  rz]]
+                    for i in [bv[np.newaxis, :, :]/127.5-1.0, rx0, ry0, rz0,
+                              pv[np.newaxis, :, :]/127.5-1.0,  rx,  ry,  rz]]
         return (pv, rx0, ry0, rz0), (bv, rx, ry, rz)
+    
+    def make_constrained_homography(self, rx, ry, rz):
+        R = E.numpy.make_rotation_matrix(rx, ry, rz, self.rot_order)
+        H = E.numpy.make_constrained_homography(R, self.tz, self.K, bv_pivot=self.bv_pivot, pv_pivot=self.pv_pivot)
+        return H
 
     def __draw_random_lines_on(self, bv, num=1):
         H, W = self.bv_size
