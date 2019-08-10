@@ -79,7 +79,7 @@ class PerspectiveTransformerNetwork_DensePred(BaseModel):
         angles_base = {'rx':rx0, 'ry':ry0, 'rz':rz0}
         bv0 = self.ptl0(pv, rx0, ry0, rz0)
         feat = self.encoder(bv0)
-        angles_delta = self.angle_head(feat) * 0.01
+        angles_delta = self.angle_head(feat) * 0.1
         attention = self.attention_head(feat)
         B, C, H, W = attention.shape
         angles_delta = angles_delta.view((B, C, H*W))
