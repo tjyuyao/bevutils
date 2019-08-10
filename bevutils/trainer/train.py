@@ -90,10 +90,17 @@ class Trainer(BaseTrainer):
                     epoch,
                     self._progress(batch_idx),
                     loss.item()))
-                if isinstance(data, list):
-                    data = data[0]
-                if isinstance(data, torch.Tensor):
-                    self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                def draw(title, imdata):
+                    try:
+                        if isinstance(imdata, list) or isinstance(imdata, tuple):
+                            imdata = imdata[0]
+                        if isinstance(imdata, torch.Tensor):
+                            self.writer.add_image(title, make_grid(imdata.cpu(), nrow=8, normalize=True))
+                    except:
+                        import pdb; pdb.set_trace()
+                draw('input', data)
+                draw('output', output)
+                draw('target', target)
 
             if batch_idx == self.len_epoch:
                 break
