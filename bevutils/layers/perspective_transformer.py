@@ -62,6 +62,7 @@ class PerspectiveTransformerLayer(nn.Module):
         # gather pixels acoording to `pv_coord`
         x = pv_coord[:,None,:,:,0,0] # with shape (B, 1, Hb, Wb)
         y = pv_coord[:,None,:,:,1,0]
+        mask = (~((x >= 0) & (x < Wp) & (y >= 0) & (y < Hp))).expand(B, C, Hb, Wb)
         x0 = x.clamp_(0, Wp-2).to(torch.long)
         y0 = y.clamp_(0, Hp-2).to(torch.long)
         offset_00 = y0 * Wp + x0
@@ -78,6 +79,6 @@ class PerspectiveTransformerLayer(nn.Module):
         x0, x1, y0, y1 = (x - x0.to(self.dtype)), ((x0+1).to(self.dtype) - x), (y - y0.to(self.dtype)), ((y0+1).to(self.dtype) - y)
         weights = [(x1 * y1), (x0 * y1), (x1 * y0), (x0 * y0)] # weight : with shape (B, 1, Hb, Wb)
         bvmap = sum([w.expand(B, C, Hb, Wb) * p.view(B, C, Hb, Wb) for w, p in zip(weights, pvmap)]) # bvmap with shape (B, C, Hb, Wb)
-        mask = (~((x >= 0) & (x < Wp) & (y >= 0) & (y < Hp))).expand(B, C, Hb, Wb)
+        #__import__('pdb').set_trace()
         bvmap[mask] = 0.0
         return bvmap
