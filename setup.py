@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'numpy == 1.16.0',
         'matplotlib >= 3.0.1',
-        'opencv-python == 4.1.0.25',
+        'opencv-python == 4.2.0.32',
         'easydict >= 1.9',
         'torch >= 1.1.0',
         'torchvision >= 0.3.0',
