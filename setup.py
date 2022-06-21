@@ -9,7 +9,7 @@ setup(
     description='Bird\'s-Eye View Utilities',
     packages=find_packages(),
     install_requires=[
-        'numpy == 1.16.0',
+        'numpy == 1.22.0',
         'matplotlib >= 3.0.1',
         'opencv-python == 4.1.0.25',
         'easydict >= 1.9',
